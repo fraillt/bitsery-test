@@ -20,7 +20,7 @@ namespace NRFDL::SDFU
 
     Codec::Codec()
     {
-        _logger = spdlog::default_logger();
+        //_logger = spdlog::default_logger();
     }
 
     auto Codec::encode(const DfuRequestWrapper & request, data_t & packet) -> nrfdl_errorcode_t
@@ -28,7 +28,7 @@ namespace NRFDL::SDFU
         using OutputAdapter = bitsery::OutputBufferAdapter<data_t, BitseryConfig>;
         auto writtenSize    = bitsery::quickSerialization<OutputAdapter>(packet, request);
         packet.resize(writtenSize);
-        _logger->debug("Encoded request into {} bytes.", writtenSize);
+        //_logger->debug("Encoded request into {} bytes.", writtenSize);
         return NRFDL_ERR_NONE;
     }
 
@@ -39,7 +39,7 @@ namespace NRFDL::SDFU
         auto state = bitsery::quickDeserialization<InputAdapter>({packet.begin(), packet.size()}, response);
         if (!(state.first == bitsery::ReaderError::NoError && state.second))
         {
-            _logger->error("Error parsing response");
+          //  _logger->error("Error parsing response");
             return NRFDL_ERR_PROTOCOL;
         }
 

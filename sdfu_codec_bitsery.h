@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <bitsery/ext/std_variant.h>
+#include <bitsery/ext/std_optional.h>
 
 using namespace NRFDL::SDFU;
 
@@ -71,58 +72,6 @@ namespace NRFDL::SDFU
         s.value2b(o.size);
     };
 
-    template <typename S> void serialize(S & s, DfuResponse & o)
-    {
-        s.value1b(o.opcode);
-        s.value1b(o.result);
-
-        if (o.response.has_value())
-        {
-            switch (o.opcode)
-            {
-                case DfuOpcode::NRF_DFU_OP_PROTOCOL_VERSION:
-                    s.object(std::get<DfuResponseProtocol>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_OBJECT_CREATE:
-                    s.object(std::get<DfuResponseCreate>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_RECEIPT_NOTIF_SET:
-                    break;
-                case DfuOpcode::NRF_DFU_OP_CRC_GET:
-                    s.object(std::get<DfuResponseCrc>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_OBJECT_EXECUTE:
-                    break;
-                case DfuOpcode::NRF_DFU_OP_OBJECT_SELECT:
-                    s.object(std::get<DfuResponseSelect>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_MTU_GET:
-                    s.object(std::get<DfuResponseSelect>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_OBJECT_WRITE:
-                    s.object(std::get<DfuResponseWrite>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_PING:
-                    s.object(std::get<DfuResponsePing>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_HARDWARE_VERSION:
-                    s.object(std::get<DfuResponseHardware>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_FIRMWARE_VERSION:
-                    s.object(std::get<DfuResponseFirmware>(*o.response));
-                    break;
-                case DfuOpcode::NRF_DFU_OP_ABORT:
-                case DfuOpcode::NRF_DFU_OP_RESPONSE:
-                case DfuOpcode::NRF_DFU_OP_INVALID:
-                    break;
-            }
-        }
-    };
-
-    template <typename S> void serialize(S & s, DfuResponseWrapper & o)
-    {
-        s.object(o.rsp, bitsery::FtorExtObject<bitsery::ext::DfuResponseExtension>{});
-    }
 
     template <typename S> void serialize(S & s, DfuRequestFirmware & o)
     {
@@ -162,11 +111,9 @@ namespace NRFDL::SDFU
         s.value4b(o.target);
     };
 
-    template <typename S> void serialize(S & s, DfuRequestWrapper & o)
-    {
-        s.object(o.req, bitsery::FtorExtObject<bitsery::ext::DfuRequestExtension>{});
-    }
+
 } // namespace NRFDL::SDFU
+
 
 namespace bitsery
 {
@@ -175,7 +122,7 @@ namespace bitsery
         class DfuRequestExtension
         {
           public:
-            template <typename Ser, typename T, typename Fnc> void serialize(Ser & ser, const T & obj, Fnc && fnc) const
+            template <typename Ser, typename Fnc> void serialize(Ser & ser, const DfuRequest & obj, Fnc && fnc) const
             {
                 // TODO: check that this function is receving the wrapper
                 ser.value1b(obj.opcode);
@@ -238,26 +185,128 @@ namespace bitsery
             }
 
             // template <typename Des, typename T, typename Fnc> void deserialize(Des & des, T & obj, Fnc && fnc) const
-            template <typename Des, typename T, typename Fnc> void deserialize(Des & des, T & obj, Fnc && fnc) const
+            template <typename Des, typename Fnc> void deserialize(Des & des, DfuRequest & obj, Fnc && fnc) const
             {
-                T res{};
-                fnc(des, res);
+                //res{};
+                //fnc(des, res);
             }
         };
 
         class DfuResponseExtension
         {
           public:
-            template <typename Ser, typename T, typename Fnc> void serialize(Ser & ser, const T & obj, Fnc && fnc) const
+            template <typename Ser, typename Fnc>
+            void serialize(Ser & s, const DfuResponse & o, Fnc && ) const
             {
-                // TODO: throw an exception, shall not be used
+                s.value1b(o.opcode);
+                s.value1b(o.result);
+
+                // shouldn't you serialize if response is empty or not?
+                // you can use StdOptional extension for this
+                if (o.response.has_value())
+                {
+                    switch (o.opcode)
+                    {
+                        case DfuOpcode::NRF_DFU_OP_PROTOCOL_VERSION:
+                            s.object(std::get<DfuResponseProtocol>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_CREATE:
+                            s.object(std::get<DfuResponseCreate>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_RECEIPT_NOTIF_SET:
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_CRC_GET:
+                            s.object(std::get<DfuResponseCrc>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_EXECUTE:
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_SELECT:
+                            s.object(std::get<DfuResponseSelect>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_MTU_GET:
+                            s.object(std::get<DfuResponseSelect>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_WRITE:
+                            s.object(std::get<DfuResponseWrite>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_PING:
+                            s.object(std::get<DfuResponsePing>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_HARDWARE_VERSION:
+                            s.object(std::get<DfuResponseHardware>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_FIRMWARE_VERSION:
+                            s.object(std::get<DfuResponseFirmware>(*o.response));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_ABORT:
+                        case DfuOpcode::NRF_DFU_OP_RESPONSE:
+                        case DfuOpcode::NRF_DFU_OP_INVALID:
+                            break;
+                    }
+                }
             }
 
             // template <typename Des, typename T, typename Fnc> void deserialize(Des & des, T & obj, Fnc && fnc) const
-            template <typename Des, typename T, typename Fnc> void deserialize(Des & des, T & obj, Fnc && fnc) const
+            template <typename Des, typename Fnc>
+            void deserialize(Des & s, DfuResponse & o, Fnc && ) const
             {
-                T res{};
-                fnc(des, res);
+                // same as in serialize function, except that this is called during deserialization
+                s.value1b(o.opcode);
+                s.value1b(o.result);
+                // i'll assume that you will be using StdOptional for serialization, just to show how to use it :)
+                // it reads first byte, and if it is ==1 then invoke lambda to deserialize its value
+                s.ext(o.response, ext::StdOptional{}, [opcode= o.opcode](Des& s, DfuResponseType& v) {
+                    // this will be different than serialization, because we need to set active variant element before deserializing
+                    switch (opcode)
+                    {
+                        case DfuOpcode::NRF_DFU_OP_PROTOCOL_VERSION:
+                            // set active variant element and deserialize to it
+                            v = DfuResponseProtocol{};
+                            s.object(std::get<DfuResponseProtocol>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_CREATE:
+                            v = DfuResponseCreate{};
+                            s.object(std::get<DfuResponseCreate>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_RECEIPT_NOTIF_SET:
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_CRC_GET:
+                            v = DfuResponseCrc{};
+                            s.object(std::get<DfuResponseCrc>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_EXECUTE:
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_SELECT:
+                            v = DfuResponseSelect{};
+                            s.object(std::get<DfuResponseSelect>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_MTU_GET:
+                            v = DfuResponseSelect{};
+                            s.object(std::get<DfuResponseSelect>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_OBJECT_WRITE:
+                            v = DfuResponseWrite{};
+                            s.object(std::get<DfuResponseWrite>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_PING:
+                            v = DfuResponsePing{};
+                            s.object(std::get<DfuResponsePing>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_HARDWARE_VERSION:
+                            v = DfuResponseHardware{};
+                            s.object(std::get<DfuResponseHardware>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_FIRMWARE_VERSION:
+                            v = DfuResponseFirmware{};
+                            s.object(std::get<DfuResponseFirmware>(v));
+                            break;
+                        case DfuOpcode::NRF_DFU_OP_ABORT:
+                        case DfuOpcode::NRF_DFU_OP_RESPONSE:
+                        case DfuOpcode::NRF_DFU_OP_INVALID:
+                            break;
+                    }
+
+                });
             }
         };
     }; // namespace ext
@@ -266,7 +315,8 @@ namespace bitsery
     {
         template <typename T> struct ExtensionTraits<ext::DfuRequestExtension, T>
         {
-            using TValue                                = DfuRequestWrapper;
+            static_assert(std::is_same_v<T, DfuRequest>, "Only works with DfuRequest type");
+            using TValue                                = T;
             static constexpr bool SupportValueOverload  = false;
             static constexpr bool SupportObjectOverload = true;
             static constexpr bool SupportLambdaOverload = false;
@@ -274,7 +324,8 @@ namespace bitsery
 
         template <typename T> struct ExtensionTraits<ext::DfuResponseExtension, T>
         {
-            using TValue                                = DfuResponse;
+            static_assert(std::is_same_v<T, DfuResponse>, "Only works with DfuRequest type");
+            using TValue                                = T;
             static constexpr bool SupportValueOverload  = false;
             static constexpr bool SupportObjectOverload = true;
             static constexpr bool SupportLambdaOverload = false;
@@ -282,3 +333,30 @@ namespace bitsery
 
     } // namespace traits
 } // namespace bitsery
+
+
+
+
+
+namespace NRFDL::SDFU {
+
+    template <typename S> void serialize(S & s, DfuResponse & o)
+    {
+        s.ext(o, bitsery::ext::DfuResponseExtension{});
+    };
+
+    template <typename S> void serialize(S & s, DfuResponseWrapper & o)
+    {
+        s.object(o.rsp);
+    }
+
+    template <typename S>
+    void serialize(S& s, DfuRequest& o) {
+        s.ext(o, bitsery::ext::DfuRequestExtension{});
+    }
+
+    template <typename S> void serialize(S & s, DfuRequestWrapper & o)
+    {
+        s.object(o.req);
+    }
+}

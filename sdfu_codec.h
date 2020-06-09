@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <cstdint>
 using data_t = std::vector<uint8_t>;
 
 #include "nrfdl_types.h"
@@ -9,7 +10,7 @@ using data_t = std::vector<uint8_t>;
 
 #include <memory>
 
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 namespace NRFDL::SDFU
 {
@@ -22,6 +23,6 @@ namespace NRFDL::SDFU
         auto decode(const data_t & data, DfuResponseWrapper & response) -> nrfdl_errorcode_t;
 
       private:
-        std::shared_ptr<spdlog::logger> _logger;
+//        std::shared_ptr<spdlog::logger> _logger;
     };
 } // namespace NRFDL::SDFU
